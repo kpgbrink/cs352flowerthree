@@ -1,7 +1,7 @@
 'use strict';
 
 const scene = new THREE.Scene();
-scene.add( new THREE.AmbientLight( 0x444444 ) );
+scene.add( new THREE.AmbientLight( 0x121212 ) );
 const aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 10000 );
 const renderer = new THREE.WebGLRenderer();
@@ -20,8 +20,8 @@ controls.maxDistance = 5000.0;
 controls.target.set( 0, 0, 0 );
 
 // Add point light that circles
-const pointLight = new THREE.PointLight('#ffffff', .9, 10000, .9);
-pointLight.position.set(0, 250, 1000);
+const pointLight = new THREE.PointLight('#ffffff', .9, 100000, 1);
+pointLight.position.set(0, 250, 10000);
 const pointLightEuler = new THREE.Euler(0, .02, 0);
 scene.add(pointLight);
 const updatePointLightPosition = function() {
@@ -39,15 +39,15 @@ class StemPart {
         this.object = new THREE.Mesh(stemGeometry, stemMaterial);
         this.object.scale.set(10, 25, 10);
         
-        const getRandRot = function () {return Math.random*.2 -.1};
+        const getRandRot = function () {return Math.random()*-.5};
         if (prevStemPart) {
-            console.log('prevStemPart');
+            //console.log('prevStemPart');
             // copy prevStem rotation
-            //this.object.rotation.copy(prevStemPart);
+            this.object.rotation.copy(prevStemPart.object.rotation);
             // rotate randomly
-            this.object.rotation.x += .2;
-            this.object.rotation.y += .1;
-            this.object.rotation.z += .1;
+            this.object.rotation.x += getRandRot();
+            this.object.rotation.y += getRandRot();
+            this.object.rotation.z += getRandRot();
         }
         
         this.object.updateMatrix();
@@ -79,11 +79,12 @@ class StemPart {
 }
 
 class Stem {
-    constructor(stemMax=1000) {
+    constructor(stemMax=1000, startPosition) {
         // Object holder
         this.stemObjects = [];
         this.growing = true;
         this.stemMax = stemMax;
+        this.startPosition = startPosition;
     }
     
     stemTip() {
@@ -95,12 +96,12 @@ class Stem {
         if (this.stemObjects.length > 0) {
             stemPart.placeStem(this.stemTip());
         } else {
-            stemPart.object.position.set(0, -500, 0);
+            stemPart.object.position.copy(this.startPosition);
         }
         scene.add(stemPart.object);
         
-        console.log(stemPart);
-        console.log(this.stemObjects.length);
+        //console.log(stemPart);
+        //console.log(this.stemObjects.length);
         
         this.stemObjects.push(stemPart);
     }
@@ -128,17 +129,52 @@ class Stem {
     }
 }
 
+class BaseStem {
+    constructor() {
+        this.stem = new Stem(1000, new THREE.Vector3(0, -500, 0));
+        this.getRandMakeNewStem();
+        this.stems = [];
+    }
+    
+    getRandMakeNewStem() {
+        this.randMakeNew = this.stem.stemObjects.length + Math.floor(Math.random() * 100);
+    }
+    
+    getRandStemLength() {
+        return Math.floor(Math.random() * (this.stem.stemObjects.length-1) + 1);
+    }
+    
+    update() {
+        this.stem.update();
+        for (let stem of this.stems) {
+            stem.update();
+        }
+        if (this.stem.growing) {
+            if (this.stem.stemObjects.length == this.randMakeNew) {
+                console.log('make new stem');
+                console.log(this.stem.stemTip().object.position);
+                this.getRandMakeNewStem();
+                console.log(this.getRandStemLength());
+                this.stems.push(new Stem(this.getRandStemLength(),
+                                        this.stem.stemTip().object.position,
+                                        true));
+                
+            }
+        }
+    }
+}
+
 
 class FlowerScene {
     constructor() {
-        this.stem = new Stem();
+        this.baseStem = new BaseStem();
         this.render();
     }
 
     render() {
       requestAnimationFrame( () => this.render() );
       // Update the stem
-      this.stem.update();
+      this.baseStem.update();
        
         
         
