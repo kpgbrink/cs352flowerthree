@@ -21,20 +21,25 @@ controls.target.set( 0, 0, 0 );
 
 
 const geometry = new THREE.BoxGeometry( 200, 200, 200 );
-const material = new THREE.MeshNormalMaterial();
+const material = new THREE.MeshPhongMaterial();
 const cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 
+
+const stemMaterial = new THREE.MeshPhongMaterial()
 
 class FlowerScene {
     constructor() {
         // Object holder
         this.stemObject = [];
-        
-        
         this.render();
     }
     
+    addStemObject() {
+        let newObject = new THREE.BoxGeometry( 100, 100, 100);
+        
+        this.stemObject.push();
+    }
     
 
     render() {
