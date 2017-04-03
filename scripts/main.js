@@ -20,18 +20,30 @@ controls.maxPolarAngle = Math.PI * 0.495;
 controls.target.set( 0, 0, 0 );
 
 
-
-
-const geometry = new THREE.BoxGeometry( 100, 100, 100 );
+const geometry = new THREE.BoxGeometry( 200, 200, 200 );
 const material = new THREE.MeshNormalMaterial();
 const cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 
-const render = function () {
-  requestAnimationFrame( render );
-  cube.rotation.x += 0.0;
-  cube.rotation.y += 0.0;
-  renderer.render( scene, camera );
-};
 
-render();
+class FlowerScene {
+    constructor() {
+        // Object holder
+        this.stemObject = [];
+        
+        
+        this.render();
+    }
+    
+    
+
+    render() {
+      requestAnimationFrame( () => this.render() );
+      cube.rotation.x += 0.0;
+      cube.rotation.y += 0.0;
+      renderer.render( scene, camera );
+    }
+}
+
+const flowerScene = new FlowerScene();
+
