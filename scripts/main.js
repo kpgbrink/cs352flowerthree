@@ -1,7 +1,7 @@
 'use strict';
 
 const scene = new THREE.Scene();
-scene.add( new THREE.AmbientLight( 0x121212 ) );
+scene.add( new THREE.AmbientLight( 0x555555 ) );
 const aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 10000 );
 const renderer = new THREE.WebGLRenderer();
@@ -38,19 +38,29 @@ class StemPart {
     constructor(prevStemPart) {
         this.object = new THREE.Mesh(stemGeometry, stemMaterial);
         this.object.scale.set(10, 25, 10);
+        this.prevStemPart = prevStemPart;
         
         const getRandRot = function () {return Math.random()*-.5};
-        if (prevStemPart) {
+        
+        // Start at random rotation
+        if (this.prevStemPart) {
             //console.log('prevStemPart');
             // copy prevStem rotation
-            this.object.rotation.copy(prevStemPart.object.rotation);
+            this.copyPrevStemRotation(prevStemPart);
+            
             // rotate randomly
             this.object.rotation.x += getRandRot();
             this.object.rotation.y += getRandRot();
             this.object.rotation.z += getRandRot();
         }
         
-        this.object.updateMatrix();
+    }
+    
+    copyPrevStemRotation(prevStemPart) {
+        if (this.prevStemPart) {
+            this.object.rotation.copy(this.prevStemPart.object.rotation);
+            this.object.updateMatrix();
+        }
     }
     
     // Get Middles for growing and animating the stem
@@ -66,8 +76,13 @@ class StemPart {
     }
     
     // run after rotations
-    placeStem(prevStemPart) {
-        let connectTop = prevStemPart.getTopMiddle();
+    placeStem() {
+        if (!this.prevStemPart) {
+            console.log('prevStemPart', this.prevStemPart);   
+            return; 
+        }
+        console.log('prevStemPart', this.prevStemPart);
+        let connectTop = this.prevStemPart.getTopMiddle();
         let connectBottom = this.getBottomMiddle();
         this.object.position.copy(connectTop.sub(connectBottom));
     }
@@ -79,7 +94,7 @@ class StemPart {
 }
 
 class Stem {
-    constructor(stemMax=1000, startPosition) {
+    constructor(stemMax=100, startPosition) {
         // Object holder
         this.stemObjects = [];
         this.growing = true;
@@ -93,8 +108,9 @@ class Stem {
     
     addObject() {
         let stemPart = new StemPart(this.stemTip());
+        
         if (this.stemObjects.length > 0) {
-            stemPart.placeStem(this.stemTip());
+            stemPart.placeStem();
         } else {
             stemPart.object.position.copy(this.startPosition);
         }
@@ -119,8 +135,33 @@ class Stem {
         }
     }
     
+    // Randomly rotate the object by a bit.
+    stemObjectMove(stemPart) {
+        //console.log(stemPart);
+        // copy parent rotation if it exists
+        stemPart.copyPrevStemRotation();
+        // randomly rotate part
+        let stemObject = stemPart.object;
+        stemObject.rotation.x += .002;
+        stemObject.rotation.y += .001;
+        stemObject.rotation.z += .001;
+
+       stemPart.placeStem();
+    }
+    
+    // Move the stem
+    move() {
+        for (let stemPart of this.stemObjects) {
+            this.stemObjectMove(stemPart);
+            
+        }
+    }
+    
     update() {
+        this.move();
+        
         this.growing = this.checkGrowing();
+        
         if (this.growing) {
             this.addObject();
         } else {
@@ -131,7 +172,7 @@ class Stem {
 
 class BaseStem {
     constructor() {
-        this.stem = new Stem(1000, new THREE.Vector3(0, -500, 0));
+        this.stem = new Stem(100, new THREE.Vector3(0, -500, 0));
         this.getRandMakeNewStem();
         this.stems = [];
     }
