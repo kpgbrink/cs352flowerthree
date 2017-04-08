@@ -3,7 +3,7 @@
 const scene = new THREE.Scene();
 scene.add( new THREE.AmbientLight( 0x555555 ) );
 const aspect = window.innerWidth / window.innerHeight;
-const camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 10000 );
+const camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 100000 );
 const renderer = new THREE.WebGLRenderer();
 new THREEx.WindowResize(renderer, camera).trigger();
 
@@ -14,18 +14,20 @@ camera.position.set( 2000, 750, 2000 );
 // Add camera controls
 const controls = new THREE.OrbitControls( camera );
 controls.enablePan = false;
-controls.minDistance = 10;;
-controls.maxDistance = 5000.0;
 //controls.maxPolarAngle = Math.PI * 0.495;
 controls.target.set( 0, 0, 0 );
 
 // Add point light that circles
 const pointLight = new THREE.PointLight('#ffffff', .9, 100000, 1);
+const pointLight2 = new THREE.PointLight('#ffffff', .9, 100000, 1);
 pointLight.position.set(0, 250, 10000);
+pointLight2.position.set(0, 250, -10000);
 const pointLightEuler = new THREE.Euler(0, .02, 0);
 scene.add(pointLight);
+scene.add(pointLight2);
 const updatePointLightPosition = function() {
     pointLight.position.applyEuler(pointLightEuler);
+    pointLight2.position.applyEuler(pointLightEuler);
 }
 
 
@@ -37,7 +39,7 @@ const stemMaterial = new THREE.MeshPhongMaterial({color: '#0fff00'});
 class StemPart {
     constructor(prevStemPart) {
         this.object = new THREE.Mesh(stemGeometry, stemMaterial);
-        this.object.scale.set(10, 25, 10);
+        this.object.scale.set(50, 50, 50);
         this.prevStemPart = prevStemPart;
         
         this.rotationDifference = [0,0,0];
@@ -114,13 +116,15 @@ class StemPart {
 
 // ---------------------------------------- Stem
 class Stem {
-    constructor(stemMax=100, startPosition) {
+    constructor(stemMax=100, startPosition, deleteSelf=true) {
         // Object holder
         this.stems = []; // holds other stems underneath it.
         this.stemObjects = [];
         this.growing = true;
         this.stemMax = stemMax;
         this.startPosition = startPosition;
+        this.deleteSelf = deleteSelf;
+        this.deleted = false;
     }
     
     stemTip() {
@@ -135,6 +139,7 @@ class Stem {
         } else {
             stemPart.object.position.copy(this.startPosition);
         }
+        
         scene.add(stemPart.object);
         
         //console.log(stemPart);
@@ -176,16 +181,40 @@ class Stem {
     }
     
     setRandMakeNewStem() {
-        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 100);
+        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 300 + 40);
     }
     
     getRandStemLength() {
-        return Math.floor(Math.random() * (this.stemObjects.length-1) + 1);
+        return (this.stemMax - this.stemObjects.length * 2);
+    }
+    
+    stemBranchDelete() {
+        for (let stemObject of this.stemObjects) {
+            //console.log('removing object');
+            scene.remove(stemObject.object);
+        }
+        for (let stem of this.stems) {
+            stem.stemBranchDelete();
+        }
+        this.deleted = true;
     }
     
     updateStemBranches() {
-        for (let stem of this.stems) {
-            stem.update();
+        
+        // delete self if stop growing and delete self
+        if (this.stemObjects.length == 0 && !this.growing && this.deleteSelf) {
+            //console.log('deleteting self');
+            this.stemBranchDelete();
+            this.deleted = true;
+        }
+        
+        // update branched stems and check if deleted.
+        for (let i = this.stems.length-1; i >= 0; i--) {
+            if (this.stems[i].deleted) {
+                this.stems.splice(i, 1);
+            } else {
+                this.stems[i].update();
+            }
         }
         
         // If stem size is one then set the ranomMakeNe
@@ -194,21 +223,27 @@ class Stem {
         }
         
         if (this.growing) {
-            console.log(this.randMakeNew);
+            //console.log(this.randMakeNew);
             if (this.stemObjects.length == this.randMakeNew) {
-                console.log('make new stem');
-                console.log(this.stemTip().object.position);
+                //console.log('make new stem');
+                //console.log(this.stemTip().object.position);
                 this.setRandMakeNewStem();
-                console.log(this.getRandStemLength());
+                //console.log(this.getRandStemLength());
                 this.stems.push(new Stem(this.getRandStemLength(),
                                         this.stemTip().object.position,
-                                        true));
+                                        true,
+                                        this.stemTip()));
                 
             }
         }
     }
     
     update() {
+        this.updateStemBranches();
+        if (this.deleted) {
+            return;
+        }
+       
         this.move();
         
         this.growing = this.checkGrowing();
@@ -216,10 +251,11 @@ class Stem {
         if (this.growing) {
             this.addObject();
         } else {
-            this.trimStem();
+            if (this.stemObjects.length) {
+                this.trimStem();
+            }
         }
         
-        this.updateStemBranches();
     }
     
     
@@ -227,7 +263,7 @@ class Stem {
 
 class BaseStem {
     constructor() {
-        this.stem = new Stem(1000, new THREE.Vector3(0, -500, 0));
+        this.stem = new Stem(1000, new THREE.Vector3(0, -1500, 0), false);
     }
     
     update() {
