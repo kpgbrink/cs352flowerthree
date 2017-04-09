@@ -39,9 +39,8 @@ const stemMaterial = new THREE.MeshPhongMaterial({color: '#0fff00'});
 class StemPart {
     constructor(prevStemPart) {
         this.object = new THREE.Mesh(stemGeometry, stemMaterial);
-        this.object.scale.set(50, 50, 50);
+        this.object.scale.set(50, 150 , 50);
         this.prevStemPart = prevStemPart;
-        
         this.rotationDifference = [0,0,0];
         
         
@@ -49,23 +48,23 @@ class StemPart {
         if (this.prevStemPart) {
             //console.log('prevStemPart');
             // copy prevStem rotation
-            this.copyPrevStemRotation(prevStemPart);
+            this.copyPrevStemRotation();
             
         }
         
     }
     
     randRotate() {
-        const getRandRot = function () {return Math.random()*.01 - .05};
+        const getRandRot = function () {return Math.random()*.001 - .0005};
         
         
-        this.rotationDifference[0] = getRandRot();
-        this.rotationDifference[1] = getRandRot();
-        this.rotationDifference[2] = getRandRot();
+        this.rotationDifference[0] += getRandRot();
+        this.rotationDifference[1] += getRandRot();
+        this.rotationDifference[2] += getRandRot();
     
         // rotate randomly
         this.rotate(this.rotationDifference[0], 
-                    0,
+                    this.rotationDifference[1],
                     this.rotationDifference[2]);
     }
     
@@ -76,7 +75,7 @@ class StemPart {
         this.object.updateMatrix();
     }
     
-    copyPrevStemRotation(prevStemPart) {
+    copyPrevStemRotation() {
         if (this.prevStemPart) {
             this.object.rotation.copy(this.prevStemPart.object.rotation);
             this.object.updateMatrix();
@@ -138,9 +137,12 @@ class Stem {
         let stemPart;
         // if new stem part and parent stem object
         if (this.stemObjects.length == 0 && this.parentStem) {
-            console.log('stemPart is different Kristofer Brink');
+            //console.log('stemPart is different Kristofer Brink');
             stemPart = new StemPart(this.parentStem);
-            stemPart.rotate(.3, .2, .5);
+            // Rotation for new stem object
+            stemPart.rotationDifference[0] = Math.random() * Math.PI;
+            stemPart.rotationDifference[1] = Math.random() * Math.PI;
+            stemPart.rotationDifference[2] = Math.random() * Math.PI;
         } else {
             stemPart = new StemPart(this.stemTip());
         }
@@ -174,25 +176,28 @@ class Stem {
     
     // Randomly rotate the object by a bit.
     stemObjectMove(stemPart) {
-        //console.log(stemPart);
-        // copy parent rotation if it exists
+        
+        
         stemPart.copyPrevStemRotation();
-        // randomly rotate part
+        //console.log(stemPart);
         stemPart.randRotate();
+        // copy parent rotation if it exists
+        // randomly rotate part
+        
 
         stemPart.placeStem();
     }
     
     // Move the stem
     move() {
-        for (let stemPart of this.stemObjects) {
+        
+        for (const stemPart of this.stemObjects) {
             this.stemObjectMove(stemPart);
-            
         }
     }
     
     setRandMakeNewStem() {
-        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 50 + 20);
+        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 15 + 10);
     }
     
     getRandStemLength() {
@@ -236,6 +241,7 @@ class Stem {
         if (this.growing) {
             //console.log(this.randMakeNew);
             if (this.stemObjects.length == this.randMakeNew) {
+                
                 //console.log('make new stem');
                 //console.log(this.stemTip().object.position);
                 this.setRandMakeNewStem();
@@ -255,7 +261,6 @@ class Stem {
             return;
         }
        
-        this.move();
         
         this.growing = this.checkGrowing();
         
@@ -266,6 +271,7 @@ class Stem {
                 this.trimStem();
             }
         }
+        this.move();
         
     }
     
@@ -274,7 +280,7 @@ class Stem {
 
 class BaseStem {
     constructor() {
-        this.stem = new Stem(600, new THREE.Vector3(0, -500, 0), false);
+        this.stem = new Stem(200, new THREE.Vector3(0, -500, 0), false);
     }
     
     update() {
