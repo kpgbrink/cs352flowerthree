@@ -1,5 +1,17 @@
 'use strict';
 
+const gui = new dat.GUI({
+    height : 5 * 32 - 1
+});
+
+const params = {
+    growStop: true,
+    rotationSpeed: 1,
+}
+
+gui.add(params, 'growStop');
+gui.add(params, 'rotationSpeed', -5, 5, 1);
+
 const scene = new THREE.Scene();
 scene.add( new THREE.AmbientLight( 0x555555 ) );
 const aspect = window.innerWidth / window.innerHeight;
