@@ -13,12 +13,14 @@ const gui = new dat.GUI({
 
 const params = {
     growStop: true,
-    wind: .01,
+    freezeWind: false,
+    wind: .1,
     size: 100,
 };
 
 gui.add(params, 'growStop');
-gui.add(params, 'size', 10, 120);
+gui.add(params, 'size', 10, 110);
+gui.add(params, 'freezeWind');
 gui.add(params, 'wind', -5, 5, .01);
 
 const scene = new THREE.Scene();
@@ -40,7 +42,7 @@ controls.target.set( 0, 0, 0 );
 
 // Add point light that circles
 const pointLight = new THREE.PointLight('#ffffff', .9, 100000, 1);
-const pointLight2 = new THREE.PointLight('#ffffff', .9, 100000, 1);
+const pointLight2 = new THREE.PointLight('#ffff00', .9, 100000, 1);
 pointLight.position.set(0, 250, 10000);
 pointLight2.position.set(0, 250, -10000);
 const pointLightEuler = new THREE.Euler(0, .02, 0);
@@ -53,7 +55,10 @@ const updatePointLightPosition = function() {
 
 
 const stemGeometry = new THREE.BoxGeometry(1, 1, 1);
-const stemMaterial = new THREE.MeshPhongMaterial({color: '#0fff00'});
+const stemMaterial = new THREE.MeshPhongMaterial({color: '#4fff44'});
+
+const flowerMaterial = new THREE.MeshPhongMaterial({color: '#ff3333'});
+
 
 
 // ---------------------------------- StemPart
@@ -137,12 +142,12 @@ class StemPart {
 }
 
 // ---------------------------------------- Stem
-class Stem {
+class Flower {
     constructor(stemMax=100, startPosition, deleteSelf=true, parentStem) {
         // Object holder
         this.stems = []; // holds other stems underneath it.
         this.stemObjects = [];
-        this.growing = true;
+        this.growing = 0; // 0 growing, 1 max, 2 destroying
         this.stemMax = stemMax;
         this.startPosition = startPosition;
         this.deleteSelf = deleteSelf;
@@ -204,7 +209,6 @@ class Stem {
     
     // Move the stem
     move() {
-        
         for (const stemPart of this.stemObjects) {
             this.stemObjectMove(stemPart);
         }
@@ -228,19 +232,12 @@ class Stem {
         }
         this.deleted = true;
     }
-     // Checks growing. Runs on update
-    checkGrowing() {
-        if (this.growing) {
-            return this.stemObjects.length < this.stemMax;
-        } else {
-            return !(this.stemObjects.length > 0);
-        }
-    }
+
     
     updateStemBranches() {
         
         // delete self if stop growing and delete self
-        if (this.stemObjects.length == 0 && !this.growing && this.deleteSelf) {
+        if (this.stemObjects.length == 0 && this.growing == 3 && this.deleteSelf) {
             //console.log('deleteting self');
             this.stemBranchDelete();
             this.deleted = true;
@@ -255,14 +252,14 @@ class Stem {
             }
         }
         
-        // If stem size is one then set the ranomMakeNe
+        // If stem size is one then set the ranomMakeNew
         if (this.stemObjects.length == 1) {
             this.setRandMakeNewStem();
         }
         
-       
         
-        if (this.growing) {
+        
+        if (this.growing == 0) {
             //console.log(this.randMakeNew);
             if (this.stemObjects.length == this.randMakeNew) {
                 
@@ -270,7 +267,7 @@ class Stem {
                 //console.log(this.stemTip().object.position);
                 this.setRandMakeNewStem();
                 //console.log(this.getRandStemLength());
-                this.stems.push(new Stem(this.getRandStemLength(),
+                this.stems.push(new Flower(this.getRandStemLength(),
                                         this.stemTip().object.position,
                                         true,
                                         this.stemTip()));
@@ -280,6 +277,7 @@ class Stem {
     }
     
     update(size=null) {
+        // console.log(this.growing);
         // update the stem size
         this.stemMax = size?size:this.stemMax;
         
@@ -288,26 +286,54 @@ class Stem {
             return;
         }
        
+        // Growing and destroying
+       if (this.growing == 0) {
+           if (this.stemObjects.length >= this.stemMax) {
+               //console.log('grow max');
+               this.growing = 1;
+           } else {
+               this.addObject();
+           }
+       } 
         
-        this.growing = this.checkGrowing();
+       // Creating flower
+       if (this.growing == 1) {
+           // creating flower
+           
+           
+           
+           this.growing = 2;
+       }
+       
+       // max
+       if (this.growing == 2) {
+           if (params.growStop == false) {
+               this.growing = 3;
+           }
+       }
+       
+        // Destorying stem
+       if (this.growing == 3) {
+           if (this.stemObjects.length) {
+               //console.log('trimming')
+               this.trimStem();
+           } else {
+               this.growing = 0;
+           }
+       }
         
-        if (this.growing) {
-            this.addObject();
-        } else {
-            if (this.stemObjects.length && (!params.growStop)) {
-                this.trimStem();
-            }
+        if (!params.freezeWind) {
+            this.move();
         }
-        this.move();
         
     }
     
     
 }
 
-class BaseStem {
+class BaseFlower {
     constructor() {
-        this.stem = new Stem(params.size, new THREE.Vector3(0, -500, 0), false);
+        this.stem = new Flower(params.size, new THREE.Vector3(0, -500, 0), false);
     }
     
     update() {
@@ -318,7 +344,7 @@ class BaseStem {
 
 class FlowerScene {
     constructor() {
-        this.baseStem = new BaseStem();
+        this.baseStem = new BaseFlower();
         this.render();
     }
 
