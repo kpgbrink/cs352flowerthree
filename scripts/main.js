@@ -1,16 +1,25 @@
 'use strict';
 
+
+// Statistics
+const stats = new Stats();
+stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild( stats.dom );
+
+// Gui interface 
 const gui = new dat.GUI({
     height : 5 * 32 - 1
 });
 
 const params = {
     growStop: true,
-    rotationSpeed: 1,
-}
+    wind: .01,
+    size: 100,
+};
 
 gui.add(params, 'growStop');
-gui.add(params, 'rotationSpeed', -5, 5, 1);
+gui.add(params, 'size', 10, 120);
+gui.add(params, 'wind', -5, 5, .01);
 
 const scene = new THREE.Scene();
 scene.add( new THREE.AmbientLight( 0x555555 ) );
@@ -21,7 +30,7 @@ new THREEx.WindowResize(renderer, camera).trigger();
 
 document.body.appendChild( renderer.domElement );
 
-camera.position.set( 2000, 750, 2000 );
+camera.position.set( 30000, 750, 2000 );
 
 // Add camera controls
 const controls = new THREE.OrbitControls( camera );
@@ -51,7 +60,7 @@ const stemMaterial = new THREE.MeshPhongMaterial({color: '#0fff00'});
 class StemPart {
     constructor(prevStemPart) {
         this.object = new THREE.Mesh(stemGeometry, stemMaterial);
-        this.object.scale.set(50, 150 , 50);
+        this.object.scale.set(70, 200 , 70);
         this.prevStemPart = prevStemPart;
         this.rotationDifference = [0,0,0];
         
@@ -75,9 +84,9 @@ class StemPart {
         this.rotationDifference[2] += getRandRot();
     
         // rotate randomly
-        this.rotate(this.rotationDifference[0], 
-                    this.rotationDifference[1],
-                    this.rotationDifference[2]);
+        this.rotate(this.rotationDifference[0] * params.wind, 
+                    this.rotationDifference[1] * params.wind,
+                    this.rotationDifference[2] * params.wind);
     }
     
     rotate(x, y, z) {
@@ -153,7 +162,7 @@ class Stem {
             stemPart = new StemPart(this.parentStem);
             // Rotation for new stem object
             stemPart.rotationDifference[0] = Math.random() * Math.PI;
-            stemPart.rotationDifference[1] = Math.random() * Math.PI;
+            stemPart.rotationDifference[1] = Math.random() * Math.PI* 2;
             stemPart.rotationDifference[2] = Math.random() * Math.PI;
         } else {
             stemPart = new StemPart(this.stemTip());
@@ -177,14 +186,7 @@ class Stem {
         scene.remove(this.stemObjects.pop().object);
     }
     
-    // Checks growing. Runs on update
-    checkGrowing() {
-        if (this.growing) {
-            return this.stemObjects.length < this.stemMax;
-        } else {
-            return !(this.stemObjects.length > 0);
-        }
-    }
+  
     
     // Randomly rotate the object by a bit.
     stemObjectMove(stemPart) {
@@ -209,7 +211,7 @@ class Stem {
     }
     
     setRandMakeNewStem() {
-        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 15 + 10);
+        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 10 + 3);
     }
     
     getRandStemLength() {
@@ -225,6 +227,14 @@ class Stem {
             stem.stemBranchDelete();
         }
         this.deleted = true;
+    }
+     // Checks growing. Runs on update
+    checkGrowing() {
+        if (this.growing) {
+            return this.stemObjects.length < this.stemMax;
+        } else {
+            return !(this.stemObjects.length > 0);
+        }
     }
     
     updateStemBranches() {
@@ -250,6 +260,8 @@ class Stem {
             this.setRandMakeNewStem();
         }
         
+       
+        
         if (this.growing) {
             //console.log(this.randMakeNew);
             if (this.stemObjects.length == this.randMakeNew) {
@@ -267,7 +279,10 @@ class Stem {
         }
     }
     
-    update() {
+    update(size=null) {
+        // update the stem size
+        this.stemMax = size?size:this.stemMax;
+        
         this.updateStemBranches();
         if (this.deleted) {
             return;
@@ -279,7 +294,7 @@ class Stem {
         if (this.growing) {
             this.addObject();
         } else {
-            if (this.stemObjects.length) {
+            if (this.stemObjects.length && (!params.growStop)) {
                 this.trimStem();
             }
         }
@@ -292,11 +307,11 @@ class Stem {
 
 class BaseStem {
     constructor() {
-        this.stem = new Stem(200, new THREE.Vector3(0, -500, 0), false);
+        this.stem = new Stem(params.size, new THREE.Vector3(0, -500, 0), false);
     }
     
     update() {
-        this.stem.update();
+        this.stem.update(params.size);
     }
 }
 
@@ -308,15 +323,14 @@ class FlowerScene {
     }
 
     render() {
-      requestAnimationFrame( () => this.render() );
+      stats.begin();
       // Update the stem
       this.baseStem.update();
-       
-        
-        
       updatePointLightPosition();
-        
       renderer.render( scene, camera );
+        
+      stats.end();
+      requestAnimationFrame( () => this.render() );
     }
 }
 
