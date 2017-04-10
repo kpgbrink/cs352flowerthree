@@ -11,8 +11,10 @@ const gui = new dat.GUI({
     height : 5 * 32 - 1
 });
 
+let growStop = true;
+
 const params = {
-    growStop: true,
+    reGrow: () => {growStop = false; console.log(this.growStop)},
     size: 80,
     freezeRotation: false,
     wind: .1,
@@ -20,7 +22,7 @@ const params = {
     petalRotation: 0,
 };
 
-gui.add(params, 'growStop');
+gui.add(params, 'reGrow');
 gui.add(params, 'size', 10, 100);
 gui.add(params, 'freezeRotation');
 gui.add(params, 'wind', -5, 5, .01);
@@ -438,7 +440,7 @@ class Flower {
        
        // max
        if (this.growing == 2) {
-           if (params.growStop == false) {
+           if (growStop == false) {
                if (!this.flowerObject.shrink()) {
                    this.flowerObject.remove();
                     this.growing = 3;
@@ -472,32 +474,15 @@ class BaseFlower {
     }
     
     update() {
+        if (this.stem.stemObjects.length == 0) {
+            growStop = true;
+        }
         this.stem.update(params.size);
     }
 }
 
 
-class FlowerScene {
-    constructor() {
-        this.baseStem = new BaseFlower();
-        this.render();
-    }
 
-    render() {
-      stats.begin();
-      // Update the stem
-      this.baseStem.update();
-      updatePointLightPosition();
-      renderer.render( scene, camera );
-        
-      stats.end();
-      requestAnimationFrame( () => this.render() );
-    }
-}
-
-
-
-const flowerScene = new FlowerScene();
 
 // -------------------------------------------------------------- load skybox
 var cubeMap = new THREE.CubeTexture( [] );
@@ -540,16 +525,61 @@ scene.add( skyBox );
             
             
 // ----------------------------------------------------------  make water
+const waterNormals = new THREE.TextureLoader().load( '../images/waternormals.jpg' );
+waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+const water = new THREE.Water( renderer, camera, scene, {
+    textureWidth: 512,
+    textureHeight: 512,
+    waterNormals: waterNormals,
+    alpha: 	1.0,
+    sunDirection: pointLight.position.clone().normalize(),
+    sunColor: 0xffffff,
+    waterColor: 0x001e0f,
+    distortionScale: 50.0
+} );
+const mirrorMesh = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry( 500000, 500000 ),
+    water.material
+);
+mirrorMesh.add( water );
+mirrorMesh.rotation.x = - Math.PI * 0.5;
+scene.add( mirrorMesh );
+            
+            
+            
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
+// Make the flower scene
+
+class FlowerScene {
+    constructor() {
+        this.baseStem = new BaseFlower();
+        this.render();
+    }
+    
+    updateWater() {
+        water.material.uniforms.time.value += 10.0 / 60.0;
+        water.render();
+    }
+
+    render() {
+      stats.begin();
+      // Update the stem
+      this.baseStem.update();
+        
+      this.updateWater();
+        
+      updatePointLightPosition();
+        
+      renderer.render( scene, camera );
+        
+      stats.end();
+      requestAnimationFrame( () => this.render() );
+    }
+}
+
+
+
+const flowerScene = new FlowerScene();
             
             
             
