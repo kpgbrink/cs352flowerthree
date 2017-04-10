@@ -17,6 +17,7 @@ const params = {
     freezeRotation: false,
     wind: .1,
     petalScaleSpeed: .1,
+    petalRotation: 0,
 };
 
 gui.add(params, 'growStop');
@@ -24,6 +25,7 @@ gui.add(params, 'size', 10, 110);
 gui.add(params, 'freezeRotation');
 gui.add(params, 'wind', -5, 5, .01);
 gui.add(params, 'petalScaleSpeed', .01, 5, .01);
+gui.add(params, 'petalRotation', 0, 1.6, .01)
 
 const scene = new THREE.Scene();
 scene.add( new THREE.AmbientLight( 0x111111 ) );
@@ -46,7 +48,7 @@ controls.target.set( 0, 0, 0 );
 const pointLight = new THREE.PointLight('#fff0ff', .9, 100000, 1);
 const pointLight2 = new THREE.PointLight('#ffff00', .9, 100000, 1);
 pointLight.position.set(0, 10000, 10000);
-pointLight2.position.set(0, -1000, -10000);
+pointLight2.position.set(0, -10000, -10000);
 const pointLightEuler = new THREE.Euler(0, .02, 0);
 scene.add(pointLight);
 scene.add(pointLight2);
@@ -152,14 +154,22 @@ class FlowerPetals {
         const object3d = new THREE.Object3D();
         object3d.add(petal);
         object3d.position.setY(y);
+        object3d.rotation.order = 'XYZ';
         object3d.rotation.y = angle;
         return object3d;
+    }
+    
+    petalRotation() {
+        for (const petal of this.petals) {
+            petal.rotation.z = params.petalRotation;
+        }
     }
     
     
     update() {
         this.copyPrevStemRotation();
         this.place();
+        this.petalRotation();
         if (this.growing) {
             this.grow();
         }
