@@ -14,7 +14,7 @@ const gui = new dat.GUI({
 let growStop = true;
 
 const params = {
-    reGrow: () => {growStop = false; console.log(this.growStop)},
+    reGrow: () => {growStop = false; },
     size: 80,
     freezeRotation: false,
     wind: .1,
@@ -23,7 +23,7 @@ const params = {
 };
 
 gui.add(params, 'reGrow');
-gui.add(params, 'size', 10, 100);
+gui.add(params, 'size', 10, 130);
 gui.add(params, 'freezeRotation');
 gui.add(params, 'wind', -5, 5, .01);
 gui.add(params, 'petalScaleSpeed', .01, 5, .01);
@@ -38,7 +38,7 @@ new THREEx.WindowResize(renderer, camera).trigger();
 
 document.body.appendChild( renderer.domElement );
 
-camera.position.set( 30000, 750, 2000 );
+camera.position.set( 7000, 750, 1000 );
 
 // Add camera controls
 const controls = new THREE.OrbitControls( camera );
@@ -48,7 +48,7 @@ controls.target.set( 0, 0, 0 );
 
 // Add point light that circles
 const pointLight = new THREE.PointLight('#fff0ff', .9, 100000, 1);
-const pointLight2 = new THREE.PointLight('#ffff00', .9, 100000, 1);
+const pointLight2 = new THREE.PointLight('#ffffa0', .9, 100000, 1);
 pointLight.position.set(0, 10000, 10000);
 pointLight2.position.set(0, -10000, -10000);
 const pointLightEuler = new THREE.Euler(0, .02, 0);
@@ -65,8 +65,31 @@ const stemMaterial = new THREE.MeshPhongMaterial({color: '#4fff44'});
 
 const flowerGeometry = new THREE.SphereGeometry(1, 32, 32);
 
-const flowerMaterial = new THREE.MeshPhongMaterial({color: '#ff3333'});
-const flowerMaterial2 = new THREE.MeshPhongMaterial({color: '#f43ff0'});
+
+
+// Bumpy flower material
+const mapHeight = new THREE.TextureLoader().load( "../images/flowerBump.jpg" );
+mapHeight.anisotropy = 4;
+mapHeight.repeat.set( 0.998, 0.998 );
+mapHeight.offset.set( 0.001, 0.001 );
+mapHeight.wrapS = mapHeight.wrapT = THREE.RepeatWrapping;
+mapHeight.format = THREE.RGBFormat;
+
+const flowerMaterial = new THREE.MeshPhongMaterial( {
+    color: 0xff3333,
+    specular: 0x222222,
+    shininess: 25,
+    bumpMap: mapHeight,
+    bumpScale: 12
+} );
+
+const flowerMaterial2 = new THREE.MeshPhongMaterial( {
+    color: 0xffaaaa,
+    specular: 0x222222,
+    shininess: 25,
+    bumpMap: mapHeight,
+    bumpScale: 12
+} );
 
 
 const petalAmount = 12;
@@ -153,7 +176,7 @@ class FlowerPetals {
     
     createPetal(y, angle, material) {
         const petal = new THREE.Mesh(flowerGeometry, material);
-        petal.scale.set(10, .3, 3);
+        petal.scale.set(10, .7, 3);
         petal.position.setX(petal.scale.x);
         const object3d = new THREE.Object3D();
         object3d.add(petal);
