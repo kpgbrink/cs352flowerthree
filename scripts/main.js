@@ -13,7 +13,7 @@ const gui = new dat.GUI({
 
 const params = {
     growStop: true,
-    size: 100,
+    size: 80,
     freezeRotation: false,
     wind: .1,
     petalScaleSpeed: .1,
@@ -21,16 +21,16 @@ const params = {
 };
 
 gui.add(params, 'growStop');
-gui.add(params, 'size', 10, 110);
+gui.add(params, 'size', 10, 100);
 gui.add(params, 'freezeRotation');
 gui.add(params, 'wind', -5, 5, .01);
 gui.add(params, 'petalScaleSpeed', .01, 5, .01);
 gui.add(params, 'petalRotation', 0, 1.6, .01)
 
 const scene = new THREE.Scene();
-scene.add( new THREE.AmbientLight( 0x111111 ) );
+scene.add( new THREE.AmbientLight( 0x333333 ) );
 const aspect = window.innerWidth / window.innerHeight;
-const camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 100000 );
+const camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 10000000 );
 const renderer = new THREE.WebGLRenderer();
 new THREEx.WindowResize(renderer, camera).trigger();
 
@@ -62,8 +62,10 @@ const stemGeometry = new THREE.BoxGeometry(1, 1, 1);
 const stemMaterial = new THREE.MeshPhongMaterial({color: '#4fff44'});
 
 const flowerGeometry = new THREE.SphereGeometry(1, 32, 32);
+
 const flowerMaterial = new THREE.MeshPhongMaterial({color: '#ff3333'});
 const flowerMaterial2 = new THREE.MeshPhongMaterial({color: '#f43ff0'});
+
 
 const petalAmount = 12;
 const petalMaxScale = 1.5;
@@ -81,7 +83,7 @@ class FlowerPetals {
         
         this.petals = [];
         for (let i = 0; i < petalAmount; i++) {
-            const newPetal = this.createPetal(0, i * Math.PI/6, i%2==0?flowerMaterial:flowerMaterial2);
+            const newPetal = this.createPetal(i%2, i * Math.PI/6, i%2==0?flowerMaterial:flowerMaterial2);
             this.petals.push(newPetal);
             this.baseObject.add(newPetal);
         }
@@ -149,7 +151,7 @@ class FlowerPetals {
     
     createPetal(y, angle, material) {
         const petal = new THREE.Mesh(flowerGeometry, material);
-        petal.scale.set(10, 1, 3);
+        petal.scale.set(10, .3, 3);
         petal.position.setX(petal.scale.x);
         const object3d = new THREE.Object3D();
         object3d.add(petal);
@@ -333,7 +335,7 @@ class Flower {
     }
     
     setRandMakeNewStem() {
-        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 10 + 3);
+        this.randMakeNew = this.stemObjects.length + Math.floor(Math.random() * 8 + 6);
     }
     
     getRandStemLength() {
@@ -493,5 +495,79 @@ class FlowerScene {
     }
 }
 
+
+
 const flowerScene = new FlowerScene();
 
+// -------------------------------------------------------------- load skybox
+var cubeMap = new THREE.CubeTexture( [] );
+cubeMap.format = THREE.RGBFormat;
+var loader = new THREE.ImageLoader();
+loader.load( '../images/skyboxsun25degtest.png', function ( image ) {
+    var getSide = function ( x, y ) {
+        var size = 1024;
+        var canvas = document.createElement( 'canvas' );
+        canvas.width = size;
+        canvas.height = size;
+        var context = canvas.getContext( '2d' );
+        context.drawImage( image, - x * size, - y * size );
+        return canvas;
+    };
+    cubeMap.images[ 0 ] = getSide( 2, 1 ); // px
+    cubeMap.images[ 1 ] = getSide( 0, 1 ); // nx
+    cubeMap.images[ 2 ] = getSide( 1, 0 ); // py
+    cubeMap.images[ 3 ] = getSide( 1, 2 ); // ny
+    cubeMap.images[ 4 ] = getSide( 1, 1 ); // pz
+    cubeMap.images[ 5 ] = getSide( 3, 1 ); // nz
+    cubeMap.needsUpdate = true;
+} );
+var cubeShader = THREE.ShaderLib[ 'cube' ];
+cubeShader.uniforms[ 'tCube' ].value = cubeMap;
+var skyBoxMaterial = new THREE.ShaderMaterial( {
+    fragmentShader: cubeShader.fragmentShader,
+    vertexShader: cubeShader.vertexShader,
+    uniforms: cubeShader.uniforms,
+    depthWrite: false,
+    side: THREE.BackSide
+} );
+var skyBox = new THREE.Mesh(
+    new THREE.BoxGeometry( 1000000, 1000000, 1000000 ),
+    skyBoxMaterial
+);
+scene.add( skyBox );
+			
+
+            
+            
+// ----------------------------------------------------------  make water
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
