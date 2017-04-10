@@ -18,7 +18,7 @@ const params = {
     size: 80,
     freezeRotation: false,
     wind: .1,
-    petalScaleSpeed: .1,
+    petalScaleSpeed: .2,
     petalRotation: 0,
 };
 
@@ -68,7 +68,7 @@ const flowerGeometry = new THREE.SphereGeometry(1, 32, 32);
 
 
 // Bumpy flower material
-const mapHeight = new THREE.TextureLoader().load( "../images/flowerBump.jpg" );
+const mapHeight = new THREE.TextureLoader().load( "images/flowerBump.jpg" );
 mapHeight.anisotropy = 4;
 mapHeight.repeat.set( 0.998, 0.998 );
 mapHeight.offset.set( 0.001, 0.001 );
@@ -511,7 +511,7 @@ class BaseFlower {
 var cubeMap = new THREE.CubeTexture( [] );
 cubeMap.format = THREE.RGBFormat;
 var loader = new THREE.ImageLoader();
-loader.load( '../images/skyboxsun25degtest.png', function ( image ) {
+loader.load( 'images/skyboxsun25degtest.png', function ( image ) {
     var getSide = function ( x, y ) {
         var size = 1024;
         var canvas = document.createElement( 'canvas' );
@@ -548,7 +548,7 @@ scene.add( skyBox );
             
             
 // ----------------------------------------------------------  make water
-const waterNormals = new THREE.TextureLoader().load( '../images/waternormals.jpg' );
+const waterNormals = new THREE.TextureLoader().load( 'images/waternormals.jpg' );
 waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
 const water = new THREE.Water( renderer, camera, scene, {
     textureWidth: 512,
@@ -580,7 +580,7 @@ class FlowerScene {
     }
     
     updateWater() {
-        water.material.uniforms.time.value += 10.0 / 60.0;
+        water.material.uniforms.time.value += params.wind * 2;
         water.render();
     }
 
